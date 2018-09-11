@@ -31,4 +31,6 @@
 
 - (void)write:(CDVInvokedUrlCommand*)command;
 
+- (void)writeAndRead:(CDVInvokedUrlCommand*)command;
+
 @end

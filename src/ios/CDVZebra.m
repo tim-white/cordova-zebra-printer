@@ -119,16 +119,78 @@
                
                    pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Could not Detect Language"];
                 }
+                [connection close];
             } else {
                 pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Could not connect to printer"];
             }
 
-            [connection close];
                  // The sendPluginResult method is thread-safe.
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }];
     
 }
+
+- (void)writeAndRead:(CDVInvokedUrlCommand*)command
+{
+    // Check command.arguments here.
+    [self.commandDelegate runInBackground:^{
+            CDVPluginResult* pluginResult = nil;
+        
+            //Getting arguments here
+            NSString* serialNumber = [command.arguments objectAtIndex:0];
+            NSString* dataPrint = [command.arguments objectAtIndex:1];
+            NSString* waitTime = [command.arguments objectAtIndex:2];
+            NSInteger waitTimeout = 200;    //200ms timeout by default
+            if ( waitTime != nil ) {
+                waitTimeout = [waitTime integerValue];
+            }
+        
+            // Create connection
+            id<ZebraPrinterConnection, NSObject> connection = nil;
+            connection = [[MfiBtPrinterConnection alloc] initWithSerialNumber:serialNumber];
+            BOOL didOpen = [connection open];
+            if(didOpen == YES) {
+              
+                NSError *error = nil;
+                id<ZebraPrinter,NSObject> printer = [ZebraPrinterFactory getInstance:connection error:&error];
+                
+                if(printer != nil) {
+                    NSData *data = [NSData dataWithBytes:[dataPrint UTF8String] length:[dataPrint length]];
+                    [connection write:data error:&error];
+                
+                   if(error == nil) {
+                       [connection waitForData:waitTimeout];
+                       if ( [connection hasBytesAvailable] ) {
+                           NSData *response = [connection read:&error];
+                           if ( error == nil ) {
+                               NSLog( @"%@", response);
+                               NSString *responseString = [[NSString alloc] initWithData:response encoding:NSUTF8StringEncoding];
+                               pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:responseString];
+                           } else {
+                               NSLog( @"%@", [error localizedDescription]);
+                               pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Read failed"];
+                           }
+                       } else {
+                           pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"No data received"];
+                       }
+                    } else {
+                       pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Data failed to print"];
+                    }
+                } else {
+               
+                   pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Could not Detect Language"];
+                }
+                [connection close];
+            } else {
+                pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Could not connect to printer"];
+            }
+
+                 // The sendPluginResult method is thread-safe.
+        [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+    }];
+    
+}
+
 + (NSString*)cordovaVersion
 {
     return CDV_VERSION;

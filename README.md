@@ -37,6 +37,7 @@ Report issues with this plugin on the [cordova-zebra-printer issue tracker](http
 
 - zebra.scan
 - zebra.write
+- zebra.writeAndRead
 
 ## zebra.scan
 
@@ -79,5 +80,24 @@ The `zebra.write` allow connect and print in zebra printer device.
     })
 ```
 
+## zebra.writeAndRead
 
+Zebra printers can return a response to certain commands. The `zebra.writeAndRead` method allows a caller to send a command to the printer and return the response to the caller.
+
+### Supported Platforms
+
+- iOS
+
+### Quick Example
+```js
+    var serialNumber="XXQLJ144902148";
+    var data  = '! U1 getvar "ip.addr"\r\n';    // This will generate a response containing the printers IP address
+    var waitTimeInMilliSecs = 300;
+    zebra.writeAndRead(serialNumber,data,waitTimeInMilliSecs,function success(info){
+      console.log("Printer IP address is: "+info);
+    },
+    function fail(error){
+      console.log(error);
+    })
+```
 

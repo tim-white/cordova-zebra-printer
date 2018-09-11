@@ -56,4 +56,8 @@
         exec(successCallback, errorCallback, "Zebra", "write", [serialNumber,data]);
     };
     
+    Zebra.prototype.writeAndRead = function(serialNumber, data, timeout, successCallback, errorCallback) {
+        exec(successCallback,errorCallback,"Zebra","writeAndRead",[serialNumber,data,timeout]);
+    };
+    
     module.exports = new Zebra();
